@@ -42,6 +42,11 @@ const envSchema = z.object({
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
     .default('info'),
   SENTRY_DSN: z.string().url().optional(),
+
+  // Email (optional — falls back to console logging in dev)
+  EMAIL_PROVIDER: z.enum(['resend', 'console']).default('console'),
+  RESEND_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().default('Adwyzors <no-reply@adwyzors.com>'),
 })
 
 const parsed = envSchema.safeParse(process.env)

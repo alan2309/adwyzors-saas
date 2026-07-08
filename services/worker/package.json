@@ -11,7 +11,9 @@
   "dependencies": {
     "@adwyzors/config": "workspace:*",
     "@adwyzors/database": "workspace:*",
+    "@adwyzors/email": "workspace:*",
     "@adwyzors/logger": "workspace:*",
+    "@adwyzors/queue": "workspace:*",
     "bullmq": "^5.34.0"
   },
   "devDependencies": {

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { requireSession, signOut } from "@adwyzors/auth";
 import { resolveTenant } from "@adwyzors/tenant";
+import { getNotificationCounts } from "@adwyzors/notifications";
 import {
   Avatar,
   AvatarFallback,
@@ -14,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@adwyzors/ui";
-import { LayoutDashboard, Settings, Shield, LogOut } from "lucide-react";
+import { LayoutDashboard, Settings, Shield, LogOut, Bell } from "lucide-react";
 
 export default async function PlatformLayout({
   children,
@@ -46,6 +47,11 @@ export default async function PlatformLayout({
     .join("")
     .toUpperCase()
     .slice(0, 2);
+
+  const notifCounts = await getNotificationCounts(
+    session.user.tenantId,
+    session.user.userId
+  );
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -138,7 +144,21 @@ export default async function PlatformLayout({
               {tenant.name}
             </span>
           </div>
-          <Badge variant="secondary">{session.user.role}</Badge>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/notifications"
+              className="relative inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+              aria-label="Notifications"
+            >
+              <Bell className="h-4 w-4" />
+              {notifCounts.unread > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+                  {notifCounts.unread > 99 ? "99+" : notifCounts.unread}
+                </span>
+              )}
+            </Link>
+            <Badge variant="secondary">{session.user.role}</Badge>
+          </div>
         </header>
         <main className="flex-1 p-6 overflow-y-auto">{children}</main>
       </div>

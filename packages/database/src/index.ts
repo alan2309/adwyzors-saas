@@ -12,5 +12,6 @@ export type {
   UserRole,
   AuditLog,
   PasswordResetToken,
+  Notification,
   Prisma,
 } from '@prisma/client'

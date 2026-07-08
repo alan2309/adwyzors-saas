@@ -95,3 +95,91 @@ pnpm build       # all compile
 ```
 
 ---
+
+## Phase 2 — Background Jobs, Notifications & Email
+
+**Completed**: 2026-07-08  
+**Scope**: Real email delivery, in-app notifications, PDF generation, import/export pipelines, queue infrastructure
+
+---
+
+### New Packages
+
+| Package | Purpose |
+|---------|---------|
+| `packages/email` | Email provider abstraction (Resend for prod, console logger for dev), `sendEmail()` factory, HTML email templates |
+| `packages/queue` | Shared BullMQ queue definitions + typed enqueue helpers (`enqueueEmail`, `enqueuePdf`, `enqueueImport`, `enqueueExport`) |
+| `packages/notifications` | In-app notification engine (create, list with cursor pagination, markRead, markAllRead, getCounts) |
+
+### New Database Model
+
+- **`Notification`** — in-app notifications with tenant/user scoping, read/unread state, deep links
+- Migration: `20260708173208_add_notification_model`
+
+### Email System
+
+- **Providers**: `ResendEmailProvider` (production), `ConsoleEmailProvider` (dev — logs to terminal)
+- **Templates**: `buildWelcomeEmail`, `buildPasswordResetEmail`, `buildInvoiceEmail`, `buildPaymentReminderEmail`
+- **Shared layout**: HTML wrapper with header/footer, consistent styling
+- **Config**: `EMAIL_PROVIDER`, `RESEND_API_KEY`, `EMAIL_FROM` added to env schema
+
+### Workers (services/worker)
+
+| Worker | Function |
+|--------|----------|
+| Email | Template-based dispatch → builds HTML from templates → sends via configured provider |
+| PDF | Generates HTML documents (ready for Puppeteer/Playwright swap) |
+| Import | CSV parsing stub with progress tracking |
+| Export | CSV/XLSX generation stub with progress tracking |
+
+All workers use `@adwyzors/queue` connection. Worker index starts 4 workers.
+
+### API Routes
+
+- `GET /api/notifications` — list with cursor pagination, unreadOnly filter, unread/total counts
+- `POST /api/notifications` — mark all as read (`{ action: "markAllRead" }`)
+- `PATCH /api/notifications/[id]/read` — mark single notification as read
+
+### UI Changes
+
+- Notification bell icon in platform layout header with unread count badge (red, capped at 99+)
+- Forgot-password action now enqueues email job via BullMQ instead of just logging
+
+### Tests (30 new, 73 total)
+
+- `packages/email` (19) — template output validation (to, subject, HTML content, plain text, URLs, amounts, colors)
+- `packages/notifications` (11) — engine CRUD operations, cursor pagination, error handling
+
+### Key Files Added/Modified
+
+```
+packages/email/                        ← NEW: entire package
+packages/queue/                        ← NEW: entire package  
+packages/notifications/                ← NEW: entire package
+packages/config/src/email.ts           ← NEW: email config
+packages/config/src/env.ts             ← MODIFIED: added EMAIL_PROVIDER, RESEND_API_KEY, EMAIL_FROM
+packages/database/prisma/schema.prisma ← MODIFIED: Notification model
+services/worker/src/workers/           ← REWRITTEN: email, pdf, import, export workers
+services/worker/src/index.ts           ← MODIFIED: starts 4 workers
+apps/web/src/app/(auth)/forgot-password/actions.ts ← MODIFIED: enqueues email job
+apps/web/src/app/(platform)/layout.tsx ← MODIFIED: notification bell
+apps/web/src/app/api/notifications/    ← NEW: notification API routes
+```
+
+### How to Verify Locally
+
+```bash
+pnpm install
+docker-compose up -d
+pnpm --filter @adwyzors/database db:migrate
+pnpm typecheck   # 16/16 packages
+pnpm lint        # 0 errors
+pnpm test        # 73 tests pass
+pnpm build       # all compile
+
+# Test email flow (dev mode — logs to terminal):
+# 1. Start worker: pnpm --filter @adwyzors/worker dev
+# 2. Trigger forgot-password → watch terminal for email log
+```
+
+---

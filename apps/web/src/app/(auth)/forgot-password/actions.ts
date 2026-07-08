@@ -3,11 +3,12 @@
 import { prisma } from "@adwyzors/database";
 import { config } from "@adwyzors/config";
 import { logger } from "@adwyzors/logger";
+import { enqueueEmail } from "@adwyzors/queue";
 import crypto from "crypto";
 
 /**
  * Handles the forgot-password form submission.
- * Generates a password reset token and logs the reset URL to the terminal.
+ * Generates a password reset token and enqueues an email job.
  *
  * Security: Always returns success, even for non-existent emails (prevents enumeration).
  */
@@ -52,8 +53,15 @@ export async function forgotPasswordAction(
         },
       });
 
-      // In development: log the reset URL to the terminal
+      // Build reset URL and enqueue email
       const resetUrl = `${config.app.appUrl}/reset-password?token=${token}`;
+
+      await enqueueEmail("password-reset", user.email, {
+        name: user.name,
+        resetUrl,
+        expiresInMinutes: 60,
+      });
+
       logger.info(
         {
           userId: user.id,
@@ -61,7 +69,7 @@ export async function forgotPasswordAction(
           resetUrl,
           expiresAt: expiresAt.toISOString(),
         },
-        "Password reset token generated"
+        "Password reset email enqueued"
       );
     } else {
       // Timing-safe: do some work even if user not found

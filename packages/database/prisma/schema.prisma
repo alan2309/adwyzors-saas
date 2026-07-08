@@ -33,6 +33,7 @@ model Tenant {
   roles     Role[]
   auditLogs AuditLog[]
   passwordResetTokens PasswordResetToken[]
+  notifications Notification[]
 
   @@index([subdomain])
   @@index([customDomain])
@@ -216,4 +217,30 @@ model PasswordResetToken {
   @@index([token])
   @@index([userId])
   @@map("password_reset_tokens")
+}
+
+// ============================================================
+// NOTIFICATION
+// In-app notifications for users. Tenant-scoped.
+// Supports read/unread state and optional deep links.
+// ============================================================
+model Notification {
+  id        String    @id @default(cuid())
+  tenantId  String
+  userId    String
+  type      String    // e.g. "user.invited", "invoice.overdue", "system.announcement"
+  title     String
+  body      String?
+  link      String?   // Deep link within the app (e.g. "/invoices/inv-123")
+  isRead    Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, userId])
+  @@index([tenantId, userId, isRead])
+  @@index([tenantId, userId, createdAt])
+  @@map("notifications")
 }
