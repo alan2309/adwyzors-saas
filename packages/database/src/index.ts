@@ -15,5 +15,8 @@ export type {
   Notification,
   Customer,
   Contact,
+  Product,
+  Warehouse,
+  StockMovement,
   Prisma,
 } from '@prisma/client'

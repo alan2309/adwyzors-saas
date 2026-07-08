@@ -37,6 +37,16 @@ export const PERMISSIONS = {
     CONTACT_CREATE: 'crm.contact.create',
     CONTACT_EDIT: 'crm.contact.edit',
   },
+  INVENTORY: {
+    PRODUCT_LIST: 'inventory.product.list',
+    PRODUCT_CREATE: 'inventory.product.create',
+    PRODUCT_EDIT: 'inventory.product.edit',
+    PRODUCT_DELETE: 'inventory.product.delete',
+    WAREHOUSE_MANAGE: 'inventory.warehouse.manage',
+    MOVEMENT_VIEW: 'inventory.movement.view',
+    MOVEMENT_CREATE: 'inventory.movement.create',
+    ADJUSTMENT_APPROVE: 'inventory.adjustment.approve',
+  },
 } as const
 
 export type PermissionKey =
@@ -44,3 +54,4 @@ export type PermissionKey =
   | typeof PERMISSIONS.SETTINGS[keyof typeof PERMISSIONS.SETTINGS]
   | typeof PERMISSIONS.AUDIT[keyof typeof PERMISSIONS.AUDIT]
   | typeof PERMISSIONS.CRM[keyof typeof PERMISSIONS.CRM]
+  | typeof PERMISSIONS.INVENTORY[keyof typeof PERMISSIONS.INVENTORY]

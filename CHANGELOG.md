@@ -238,3 +238,66 @@ apps/web/src/app/(platform)/layout.tsx     ← MODIFIED: Customers nav link
 ```
 
 ---
+
+## Phase 4 — Inventory Engine (Ledger-Based)
+
+**Completed**: 2026-07-08  
+**Scope**: Product catalog, warehouses, immutable stock movement ledger, stock level calculation, UI pages
+
+---
+
+### New Database Models
+
+- **`Product`** — code (auto P-0001), name, unit, HSN, costPrice, sellPrice, taxRate, minStock, maxStock, categoryId. Unique (tenantId, code).
+- **`Warehouse`** — code (unique/tenant), name, address JSON, isActive flag.
+- **`StockMovement`** — immutable ledger entries. type (inward/outward/transfer/adjustment), quantity, unit, reference, reason. NEVER updated or deleted.
+- Migration: `add_inventory_models`
+
+### Key Design: Ledger-Based Inventory
+
+Stock is **never stored as a mutable field**. Current stock = `SUM(inward + adjustment) - SUM(outward)`, computed from the `stock_movements` table via aggregation. This ensures perfect audit trail and prevents desync.
+
+### Permission Keys (8 new, 32 total)
+
+`inventory.product.list`, `inventory.product.create`, `inventory.product.edit`, `inventory.product.delete`, `inventory.warehouse.manage`, `inventory.movement.view`, `inventory.movement.create`, `inventory.adjustment.approve`
+
+### API Routes
+
+**Products** (`/api/inventory/products`):
+- `GET /` — paginated, search (name/code/HSN), filter (category, status)
+- `POST /` — create with auto-code (P-0001)
+- `GET /[id]` — detail
+- `PATCH /[id]` — update with version increment
+
+**Warehouses** (`/api/inventory/warehouses`):
+- `GET /` — list all
+- `POST /` — create (unique code, uppercase alphanumeric)
+- `PATCH /` — update (name, address, isActive)
+
+**Stock** (`/api/inventory/stock`):
+- `GET /` — current stock levels (aggregated from ledger), filter by productId/warehouseId
+- `POST /` — create movement (validates sufficient stock for outward, immutable entry)
+
+### UI Pages
+
+- **`/inventory`** — product catalog table (code, name, unit, HSN, cost, sell, min stock, status), pagination
+- **`/inventory/[id]`** — product detail with stock cards (total, cost, sell, min alert), stock-by-warehouse breakdown, recent 10 movements table with type icons
+- **Sidebar** — "Inventory" nav item with Package icon
+
+### Tests (17 new, 110 total across project)
+
+- Product DTO validation: name, unit required, costPrice non-negative, taxRate 0-100, nullable clears
+- Stock calculation logic: net formula, empty = 0, insufficient stock check, adjustment adds positively
+
+### Key Files Added
+
+```
+packages/database/prisma/schema.prisma        ← MODIFIED: Product + Warehouse + StockMovement
+apps/web/src/app/api/inventory/products/      ← NEW: CRUD routes + DTO
+apps/web/src/app/api/inventory/warehouses/    ← NEW: manage routes
+apps/web/src/app/api/inventory/stock/         ← NEW: ledger movement API
+apps/web/src/app/(platform)/inventory/        ← NEW: list + detail pages
+apps/web/src/app/(platform)/layout.tsx        ← MODIFIED: Inventory nav
+```
+
+---

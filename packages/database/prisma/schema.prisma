@@ -35,6 +35,8 @@ model Tenant {
   passwordResetTokens PasswordResetToken[]
   notifications Notification[]
   customers Customer[]
+  products  Product[]
+  warehouses Warehouse[]
 
   @@index([subdomain])
   @@index([customDomain])
@@ -308,4 +310,99 @@ model Contact {
   @@index([tenantId])
   @@index([customerId])
   @@map("contacts")
+}
+
+// ============================================================
+// PRODUCT
+// Inventory item — raw material, component, or finished good.
+// Tenant-scoped. Unique code per tenant.
+// ============================================================
+model Product {
+  id          String    @id @default(cuid())
+  tenantId    String
+  code        String
+  name        String
+  description String?
+  categoryId  String?
+  unit        String    // "pcs", "meters", "kg", "liters"
+  hsn         String?   // Harmonised System Nomenclature code
+  costPrice   Decimal?
+  sellPrice   Decimal?
+  taxRate     Decimal?
+  minStock    Decimal?
+  maxStock    Decimal?
+  status      String    @default("active")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  version     Int       @default(1)
+
+  // Relations
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  stockMovements StockMovement[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([tenantId, deletedAt])
+  @@index([tenantId, status])
+  @@index([tenantId, categoryId])
+  @@map("products")
+}
+
+// ============================================================
+// WAREHOUSE
+// Physical storage location. Tenant-scoped.
+// ============================================================
+model Warehouse {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  code      String
+  address   Json?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+
+  // Relations
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  stockMovements StockMovement[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@map("warehouses")
+}
+
+// ============================================================
+// STOCK_MOVEMENT
+// Immutable ledger entry for inventory changes.
+// Current stock = SUM(quantity) WHERE type=inward - SUM(quantity) WHERE type=outward
+// NEVER updated or deleted.
+// ============================================================
+model StockMovement {
+  id          String   @id @default(cuid())
+  tenantId    String
+  productId   String
+  warehouseId String
+  type        String   // "inward" | "outward" | "transfer" | "adjustment"
+  quantity    Decimal
+  unit        String
+  reference   String?  // PO number, SO number, adjustment reason
+  referenceId String?  // Foreign key to source document
+  reason      String?
+  createdAt   DateTime @default(now())
+  createdBy   String?
+
+  // Relations
+  product   Product   @relation(fields: [productId], references: [id])
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, productId])
+  @@index([tenantId, warehouseId])
+  @@index([tenantId, productId, warehouseId])
+  @@index([tenantId, createdAt])
+  @@map("stock_movements")
 }

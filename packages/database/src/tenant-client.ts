@@ -13,6 +13,9 @@ const TENANT_SCOPED_MODELS = new Set([
   'Notification',
   'Customer',
   'Contact',
+  'Product',
+  'Warehouse',
+  'StockMovement',
 ])
 
 /**

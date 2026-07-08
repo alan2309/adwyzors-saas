@@ -51,6 +51,16 @@ const PLATFORM_PERMISSIONS = [
   { key: 'crm.contact.list', module: 'crm', resource: 'contact', action: 'list', description: 'View customer contacts' },
   { key: 'crm.contact.create', module: 'crm', resource: 'contact', action: 'create', description: 'Create a customer contact' },
   { key: 'crm.contact.edit', module: 'crm', resource: 'contact', action: 'edit', description: 'Edit a customer contact' },
+
+  // Inventory
+  { key: 'inventory.product.list', module: 'inventory', resource: 'product', action: 'list', description: 'View product catalog' },
+  { key: 'inventory.product.create', module: 'inventory', resource: 'product', action: 'create', description: 'Create a product' },
+  { key: 'inventory.product.edit', module: 'inventory', resource: 'product', action: 'edit', description: 'Edit product details' },
+  { key: 'inventory.product.delete', module: 'inventory', resource: 'product', action: 'delete', description: 'Delete a product (soft)' },
+  { key: 'inventory.warehouse.manage', module: 'inventory', resource: 'warehouse', action: 'manage', description: 'Manage warehouses' },
+  { key: 'inventory.movement.view', module: 'inventory', resource: 'movement', action: 'view', description: 'View stock movements' },
+  { key: 'inventory.movement.create', module: 'inventory', resource: 'movement', action: 'create', description: 'Create stock movements' },
+  { key: 'inventory.adjustment.approve', module: 'inventory', resource: 'adjustment', action: 'approve', description: 'Approve stock adjustments' },
 ]
 
 async function main() {
@@ -134,9 +144,9 @@ async function main() {
     },
   })
 
-  // Assign all settings + CRM permissions to TENANT_ADMIN
+  // Assign all settings + CRM + inventory permissions to TENANT_ADMIN
   const tenantPermissions = await prisma.permission.findMany({
-    where: { module: { in: ['settings', 'crm', 'audit'] } },
+    where: { module: { in: ['settings', 'crm', 'inventory', 'audit'] } },
   })
   for (const perm of tenantPermissions) {
     await prisma.rolePermission.upsert({
