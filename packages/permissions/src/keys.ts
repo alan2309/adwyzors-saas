@@ -27,9 +27,20 @@ export const PERMISSIONS = {
   AUDIT: {
     LOG_READ: 'audit.log.read',
   },
+  CRM: {
+    CUSTOMER_LIST: 'crm.customer.list',
+    CUSTOMER_CREATE: 'crm.customer.create',
+    CUSTOMER_VIEW: 'crm.customer.view',
+    CUSTOMER_EDIT: 'crm.customer.edit',
+    CUSTOMER_DELETE: 'crm.customer.delete',
+    CONTACT_LIST: 'crm.contact.list',
+    CONTACT_CREATE: 'crm.contact.create',
+    CONTACT_EDIT: 'crm.contact.edit',
+  },
 } as const
 
 export type PermissionKey =
   | typeof PERMISSIONS.PLATFORM[keyof typeof PERMISSIONS.PLATFORM]
   | typeof PERMISSIONS.SETTINGS[keyof typeof PERMISSIONS.SETTINGS]
   | typeof PERMISSIONS.AUDIT[keyof typeof PERMISSIONS.AUDIT]
+  | typeof PERMISSIONS.CRM[keyof typeof PERMISSIONS.CRM]

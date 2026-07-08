@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@adwyzors/ui";
-import { LayoutDashboard, Settings, Shield, LogOut, Bell } from "lucide-react";
+import { LayoutDashboard, Settings, Shield, LogOut, Bell, Users } from "lucide-react";
 
 export default async function PlatformLayout({
   children,
@@ -76,6 +76,13 @@ export default async function PlatformLayout({
             >
               <LayoutDashboard className="h-4 w-4" />
               Dashboard
+            </Link>
+            <Link
+              href="/customers"
+              className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              <Users className="h-4 w-4" />
+              Customers
             </Link>
             {session.user.role === "SUPER_ADMIN" && (
               <Link

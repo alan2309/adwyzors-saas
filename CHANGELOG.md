@@ -183,3 +183,58 @@ pnpm build       # all compile
 ```
 
 ---
+
+## Phase 3 — CRM & Customer Management
+
+**Completed**: 2026-07-08  
+**Scope**: Customer/Contact data models, CRUD APIs, list/detail pages, search/filter, GSTIN/PAN validation
+
+---
+
+### New Database Models
+
+- **`Customer`** — code (auto-generated), name, type (individual/business), email, phone, address (JSON), GSTIN, PAN, credit limit, payment terms, status. Unique constraint on (tenantId, code).
+- **`Contact`** — name, email, phone, role, isPrimary flag. Belongs to Customer. Cascade delete.
+- Migration: `add_customer_contact_models`
+
+### Permission Keys (8 new)
+
+`crm.customer.list`, `crm.customer.create`, `crm.customer.view`, `crm.customer.edit`, `crm.customer.delete`, `crm.contact.list`, `crm.contact.create`, `crm.contact.edit`
+
+### API Routes
+
+**Customers** (`/api/crm/customers`):
+- `GET /` — paginated list, search (name/code/email/phone), filter (status, type), sortable
+- `POST /` — create with auto-generated code (C-0001), GSTIN/PAN format validation
+- `GET /[id]` — detail with contacts included
+- `PATCH /[id]` — update with version increment
+- `DELETE /[id]` — soft-delete (sets deletedAt)
+
+**Contacts** (`/api/crm/customers/[id]/contacts`):
+- `GET /` — list contacts for customer (primary first)
+- `POST /` — create contact (auto-unsets other primaries if isPrimary)
+- `PATCH /[contactId]` — update contact
+
+### UI Pages
+
+- **`/customers`** — data table with code, name, type, email, phone, contact count, status. Pagination. "Add Customer" button.
+- **`/customers/[id]`** — detail view with info cards (contact, business, address), contacts list with primary badge.
+- **Sidebar** — "Customers" nav item with Users icon added to platform layout.
+
+### Tests (20 new, 93 total across project)
+
+- Customer DTO validation: name, type enum, GSTIN regex, PAN regex, address, creditLimit, paymentTerms, email format, partial updates, nullable fields
+
+### Key Files Added
+
+```
+packages/database/prisma/schema.prisma     ← MODIFIED: Customer + Contact models
+packages/permissions/src/keys.ts           ← MODIFIED: added CRM permissions
+packages/database/prisma/seed.ts           ← MODIFIED: CRM permissions seeded
+apps/web/src/app/api/crm/customers/        ← NEW: CRUD routes + DTOs
+apps/web/src/app/api/crm/customers/[id]/contacts/ ← NEW: Contact routes + DTOs
+apps/web/src/app/(platform)/customers/     ← NEW: list + detail pages
+apps/web/src/app/(platform)/layout.tsx     ← MODIFIED: Customers nav link
+```
+
+---

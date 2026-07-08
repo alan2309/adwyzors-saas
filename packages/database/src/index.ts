@@ -13,5 +13,7 @@ export type {
   AuditLog,
   PasswordResetToken,
   Notification,
+  Customer,
+  Contact,
   Prisma,
 } from '@prisma/client'

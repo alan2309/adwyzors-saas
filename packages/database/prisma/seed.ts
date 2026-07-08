@@ -41,6 +41,16 @@ const PLATFORM_PERMISSIONS = [
 
   // Audit
   { key: 'audit.log.read', module: 'audit', resource: 'log', action: 'read', description: 'View audit logs' },
+
+  // CRM — Customer Management
+  { key: 'crm.customer.list', module: 'crm', resource: 'customer', action: 'list', description: 'View customer list' },
+  { key: 'crm.customer.create', module: 'crm', resource: 'customer', action: 'create', description: 'Create a new customer' },
+  { key: 'crm.customer.view', module: 'crm', resource: 'customer', action: 'view', description: 'View customer details' },
+  { key: 'crm.customer.edit', module: 'crm', resource: 'customer', action: 'edit', description: 'Edit customer information' },
+  { key: 'crm.customer.delete', module: 'crm', resource: 'customer', action: 'delete', description: 'Delete a customer (soft)' },
+  { key: 'crm.contact.list', module: 'crm', resource: 'contact', action: 'list', description: 'View customer contacts' },
+  { key: 'crm.contact.create', module: 'crm', resource: 'contact', action: 'create', description: 'Create a customer contact' },
+  { key: 'crm.contact.edit', module: 'crm', resource: 'contact', action: 'edit', description: 'Edit a customer contact' },
 ]
 
 async function main() {
@@ -124,11 +134,11 @@ async function main() {
     },
   })
 
-  // Assign all settings permissions to TENANT_ADMIN
-  const settingsPermissions = await prisma.permission.findMany({
-    where: { module: 'settings' },
+  // Assign all settings + CRM permissions to TENANT_ADMIN
+  const tenantPermissions = await prisma.permission.findMany({
+    where: { module: { in: ['settings', 'crm', 'audit'] } },
   })
-  for (const perm of settingsPermissions) {
+  for (const perm of tenantPermissions) {
     await prisma.rolePermission.upsert({
       where: { roleId_permissionId: { roleId: tenantAdminRole.id, permissionId: perm.id } },
       update: {},

@@ -34,6 +34,7 @@ model Tenant {
   auditLogs AuditLog[]
   passwordResetTokens PasswordResetToken[]
   notifications Notification[]
+  customers Customer[]
 
   @@index([subdomain])
   @@index([customDomain])
@@ -243,4 +244,68 @@ model Notification {
   @@index([tenantId, userId, isRead])
   @@index([tenantId, userId, createdAt])
   @@map("notifications")
+}
+
+// ============================================================
+// CUSTOMER
+// CRM entity — represents a business customer or individual.
+// Tenant-scoped. Supports both B2B and B2C.
+// ============================================================
+model Customer {
+  id           String    @id @default(cuid())
+  tenantId     String
+  code         String    // Auto-generated: e.g. "MAHA-C-001"
+  name         String
+  type         String    @default("business") // "individual" | "business"
+  email        String?
+  phone        String?
+  address      Json?     // { line1, line2, city, state, postalCode, country }
+  gstin        String?   // India GST identification number
+  pan          String?   // India PAN number
+  creditLimit  Decimal?
+  paymentTerms Int?      // days
+  status       String    @default("active")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  createdBy    String?
+  updatedBy    String?
+  deletedAt    DateTime?
+  version      Int       @default(1)
+
+  // Relations
+  tenant   Tenant    @relation(fields: [tenantId], references: [id])
+  contacts Contact[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([tenantId, deletedAt])
+  @@index([tenantId, status])
+  @@index([tenantId, name])
+  @@map("customers")
+}
+
+// ============================================================
+// CONTACT
+// Contact person associated with a Customer.
+// A customer can have multiple contacts. One can be primary.
+// ============================================================
+model Contact {
+  id         String  @id @default(cuid())
+  tenantId   String
+  customerId String
+  name       String
+  email      String?
+  phone      String?
+  role       String? // e.g. "Purchasing Manager", "Accounts"
+  isPrimary  Boolean @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  createdBy  String?
+
+  // Relations
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([customerId])
+  @@map("contacts")
 }
