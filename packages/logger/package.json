@@ -1,0 +1,29 @@
+{
+  "name": "@adwyzors/logger",
+  "version": "0.0.1",
+  "private": true,
+  "license": "UNLICENSED",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@adwyzors/config": "workspace:*",
+    "pino": "^9.5.0",
+    "pino-pretty": "^11.3.0"
+  },
+  "devDependencies": {
+    "@adwyzors/typescript-config": "workspace:*",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.2"
+  }
+}

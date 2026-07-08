@@ -1,0 +1,22 @@
+{
+  "name": "@adwyzors/tenant",
+  "version": "0.0.1",
+  "private": true,
+  "license": "UNLICENSED",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": { ".": { "types": "./src/index.ts", "default": "./src/index.ts" } },
+  "scripts": { "build": "tsc", "typecheck": "tsc --noEmit" },
+  "dependencies": {
+    "@adwyzors/config": "workspace:*",
+    "@adwyzors/database": "workspace:*",
+    "@adwyzors/logger": "workspace:*",
+    "@adwyzors/shared": "workspace:*",
+    "ioredis": "^5.4.1"
+  },
+  "devDependencies": {
+    "@adwyzors/typescript-config": "workspace:*",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.2"
+  }
+}

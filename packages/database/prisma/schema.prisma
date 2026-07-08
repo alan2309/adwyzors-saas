@@ -1,0 +1,193 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// TENANT
+// The root entity for multi-tenancy.
+// Every other model (except Permission) is scoped to a Tenant.
+// ============================================================
+model Tenant {
+  id           String    @id @default(cuid())
+  name         String
+  subdomain    String    @unique
+  customDomain String?   @unique
+  plan         String    @default("trial")
+  configJson   Json      @default("{}")
+  status       String    @default("active")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+  version      Int       @default(1)
+
+  // Relations
+  users     User[]
+  roles     Role[]
+  auditLogs AuditLog[]
+
+  @@index([subdomain])
+  @@index([customDomain])
+  @@index([status])
+  @@map("tenants")
+}
+
+// ============================================================
+// USER
+// Belongs to exactly one tenant. Auth is done against this model.
+// ============================================================
+model User {
+  id           String    @id @default(cuid())
+  tenantId     String
+  email        String
+  passwordHash String?
+  name         String
+  avatarUrl    String?
+  status       String    @default("active")
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  createdBy    String?
+  updatedBy    String?
+  deletedAt    DateTime?
+  version      Int       @default(1)
+
+  // Relations
+  tenant    Tenant     @relation(fields: [tenantId], references: [id])
+  userRoles UserRole[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@index([tenantId, deletedAt])
+  @@index([tenantId, status])
+  @@map("users")
+}
+
+// ============================================================
+// PERMISSION
+// Global, platform-level permissions.
+// Not tenant-scoped — defined once, assigned to roles.
+// Key format: module.resource.action (e.g. "sales.order.create")
+// ============================================================
+model Permission {
+  id          String   @id @default(cuid())
+  key         String   @unique // e.g. "sales.order.create"
+  module      String // e.g. "sales"
+  resource    String // e.g. "order"
+  action      String // e.g. "create"
+  description String
+  createdAt   DateTime @default(now())
+
+  // Relations
+  rolePermissions RolePermission[]
+
+  @@index([module])
+  @@map("permissions")
+}
+
+// ============================================================
+// ROLE
+// Tenant-scoped (tenantId NOT NULL for tenant roles).
+// Platform roles (SUPER_ADMIN) have tenantId = NULL, isSystem = true.
+// ============================================================
+model Role {
+  id          String    @id @default(cuid())
+  tenantId    String? // NULL = platform role (SUPER_ADMIN, SYSTEM)
+  name        String
+  description String?
+  isSystem    Boolean   @default(false)
+  status      String    @default("active")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  version     Int       @default(1)
+
+  // Relations
+  tenant          Tenant?          @relation(fields: [tenantId], references: [id])
+  rolePermissions RolePermission[]
+  userRoles       UserRole[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([tenantId, deletedAt])
+  @@map("roles")
+}
+
+// ============================================================
+// ROLE_PERMISSION (Junction)
+// Normalized many-to-many between Role and Permission.
+// Replaces the anti-pattern of storing permissions as JSON on Role.
+// ============================================================
+model RolePermission {
+  roleId       String
+  permissionId String
+  assignedAt   DateTime @default(now())
+  assignedBy   String?
+
+  // Relations
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// ============================================================
+// USER_ROLE (Junction)
+// Assigns roles to users. A user may have multiple roles.
+// ============================================================
+model UserRole {
+  userId     String
+  roleId     String
+  tenantId   String
+  assignedAt DateTime @default(now())
+  assignedBy String?
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@index([tenantId])
+  @@index([userId])
+  @@map("user_roles")
+}
+
+// ============================================================
+// AUDIT_LOG
+// Immutable record of every data mutation in the system.
+// Written by the Audit Engine on every create/update/delete.
+// NEVER updated or deleted.
+// ============================================================
+model AuditLog {
+  id         String   @id @default(cuid())
+  tenantId   String
+  userId     String?
+  action     String // e.g. "user.created", "sales_order.approved"
+  entityType String // e.g. "User", "SalesOrder"
+  entityId   String
+  before     Json? // State before mutation
+  after      Json? // State after mutation
+  ipAddress  String?
+  userAgent  String?
+  metadata   Json? // Additional context
+  createdAt  DateTime @default(now())
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, entityType, entityId])
+  @@index([tenantId, userId])
+  @@index([tenantId, createdAt])
+  @@map("audit_logs")
+}

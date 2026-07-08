@@ -1,0 +1,13 @@
+{
+  "name": "@adwyzors/eslint-config",
+  "version": "0.0.1",
+  "private": true,
+  "license": "UNLICENSED",
+  "main": "index.js",
+  "files": ["index.js", "nextjs.js"],
+  "dependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint-plugin-import": "^2.31.0"
+  }
+}

@@ -1,0 +1,189 @@
+/**
+ * Database Seed Script
+ *
+ * Creates the foundational data required for the platform to operate:
+ * 1. All platform Permission records
+ * 2. SUPER_ADMIN platform role
+ * 3. Maharaja Clothing tenant (pilot customer)
+ * 4. TENANT_ADMIN role for Maharaja Clothing
+ * 5. Default SUPER_ADMIN user
+ *
+ * Run: pnpm --filter @adwyzors/database db:seed
+ * Safe to re-run (uses upsert throughout)
+ */
+
+import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
+
+const prisma = new PrismaClient()
+
+// ── Platform Permissions ──────────────────────────────────────────
+// Format: module.resource.action
+const PLATFORM_PERMISSIONS = [
+  // Super Admin — Platform Management
+  { key: 'platform.tenant.create', module: 'platform', resource: 'tenant', action: 'create', description: 'Create a new tenant' },
+  { key: 'platform.tenant.read', module: 'platform', resource: 'tenant', action: 'read', description: 'View tenant details' },
+  { key: 'platform.tenant.update', module: 'platform', resource: 'tenant', action: 'update', description: 'Update tenant configuration' },
+  { key: 'platform.tenant.suspend', module: 'platform', resource: 'tenant', action: 'suspend', description: 'Suspend a tenant account' },
+  { key: 'platform.user.manage', module: 'platform', resource: 'user', action: 'manage', description: 'Manage all users across tenants' },
+
+  // Settings — User & Role Management
+  { key: 'settings.user.invite', module: 'settings', resource: 'user', action: 'invite', description: 'Invite users to the tenant' },
+  { key: 'settings.user.read', module: 'settings', resource: 'user', action: 'read', description: 'View users in the tenant' },
+  { key: 'settings.user.update', module: 'settings', resource: 'user', action: 'update', description: 'Update user details' },
+  { key: 'settings.user.deactivate', module: 'settings', resource: 'user', action: 'deactivate', description: 'Deactivate a user' },
+  { key: 'settings.role.create', module: 'settings', resource: 'role', action: 'create', description: 'Create a new role' },
+  { key: 'settings.role.read', module: 'settings', resource: 'role', action: 'read', description: 'View roles' },
+  { key: 'settings.role.update', module: 'settings', resource: 'role', action: 'update', description: 'Update a role and its permissions' },
+  { key: 'settings.role.delete', module: 'settings', resource: 'role', action: 'delete', description: 'Delete a role' },
+  { key: 'settings.tenant.read', module: 'settings', resource: 'tenant', action: 'read', description: 'View tenant settings' },
+  { key: 'settings.tenant.update', module: 'settings', resource: 'tenant', action: 'update', description: 'Update tenant settings' },
+
+  // Audit
+  { key: 'audit.log.read', module: 'audit', resource: 'log', action: 'read', description: 'View audit logs' },
+]
+
+async function main() {
+  console.log('🌱 Starting database seed...\n')
+
+  // ── 1. Upsert Platform Permissions ──────────────────────────────
+  console.log('📋 Seeding permissions...')
+  for (const perm of PLATFORM_PERMISSIONS) {
+    await prisma.permission.upsert({
+      where: { key: perm.key },
+      update: { description: perm.description },
+      create: perm,
+    })
+  }
+  console.log(`   ✅ ${PLATFORM_PERMISSIONS.length} permissions seeded`)
+
+  // ── 2. Seed SUPER_ADMIN Platform Role ─────────────────────────
+  console.log('\n👑 Seeding SUPER_ADMIN role...')
+  let superAdminRole = await prisma.role.findFirst({
+    where: { tenantId: null, name: 'SUPER_ADMIN' },
+  })
+
+  if (!superAdminRole) {
+    superAdminRole = await prisma.role.create({
+      data: {
+        name: 'SUPER_ADMIN',
+        tenantId: null,
+        description: 'Platform super administrator — full access to all tenants',
+        isSystem: true,
+        status: 'active',
+        version: 1,
+      },
+    })
+  }
+
+  // Assign ALL platform permissions to SUPER_ADMIN
+  const allPermissions = await prisma.permission.findMany()
+  for (const perm of allPermissions) {
+    await prisma.rolePermission.upsert({
+      where: { roleId_permissionId: { roleId: superAdminRole.id, permissionId: perm.id } },
+      update: {},
+      create: { roleId: superAdminRole.id, permissionId: perm.id },
+    })
+  }
+  console.log(`   ✅ SUPER_ADMIN role created with ${allPermissions.length} permissions`)
+
+  // ── 3. Upsert Maharaja Clothing Tenant ──────────────────────────
+  console.log('\n🏢 Seeding Maharaja Clothing tenant...')
+  const maharajaTenant = await prisma.tenant.upsert({
+    where: { subdomain: 'maharaja' },
+    update: {},
+    create: {
+      name: 'Maharaja Clothing',
+      subdomain: 'maharaja',
+      plan: 'enterprise',
+      status: 'active',
+      version: 1,
+      configJson: {
+        industry: 'garment_manufacturing',
+        modules: ['manufacturing', 'wholesale', 'retail', 'inventory', 'sales', 'purchase'],
+        currency: 'INR',
+        timezone: 'Asia/Kolkata',
+        dateFormat: 'DD/MM/YYYY',
+      },
+    },
+  })
+  console.log(`   ✅ Tenant created: ${maharajaTenant.name} (id: ${maharajaTenant.id})`)
+
+  // ── 4. Upsert TENANT_ADMIN role for Maharaja ────────────────────
+  console.log('\n🔑 Seeding TENANT_ADMIN role...')
+  const tenantAdminRole = await prisma.role.upsert({
+    where: { tenantId_name: { tenantId: maharajaTenant.id, name: 'TENANT_ADMIN' } },
+    update: {},
+    create: {
+      name: 'TENANT_ADMIN',
+      tenantId: maharajaTenant.id,
+      description: 'Full administrator access for this tenant',
+      isSystem: true,
+      status: 'active',
+      version: 1,
+    },
+  })
+
+  // Assign all settings permissions to TENANT_ADMIN
+  const settingsPermissions = await prisma.permission.findMany({
+    where: { module: 'settings' },
+  })
+  for (const perm of settingsPermissions) {
+    await prisma.rolePermission.upsert({
+      where: { roleId_permissionId: { roleId: tenantAdminRole.id, permissionId: perm.id } },
+      update: {},
+      create: { roleId: tenantAdminRole.id, permissionId: perm.id },
+    })
+  }
+  console.log(`   ✅ TENANT_ADMIN role created`)
+
+  // ── 5. Upsert Super Admin User ───────────────────────────────────
+  console.log('\n👤 Seeding super admin user...')
+  const superAdminEmail = 'admin@adwyzors.com'
+  const rawPassword = 'Admin@Adwyzors2025!'
+  const passwordHash = await bcrypt.hash(rawPassword, 12)
+
+  // Super admin user is placed in the Maharaja tenant for bootstrapping
+  // In production: create a dedicated internal tenant for Adwyzors staff
+  const superAdminUser = await prisma.user.upsert({
+    where: { tenantId_email: { tenantId: maharajaTenant.id, email: superAdminEmail } },
+    update: {},
+    create: {
+      tenantId: maharajaTenant.id,
+      email: superAdminEmail,
+      passwordHash,
+      name: 'Super Admin',
+      status: 'active',
+      version: 1,
+    },
+  })
+
+  // Assign SUPER_ADMIN role to this user
+  await prisma.userRole.upsert({
+    where: { userId_roleId: { userId: superAdminUser.id, roleId: superAdminRole.id } },
+    update: {},
+    create: {
+      userId: superAdminUser.id,
+      roleId: superAdminRole.id,
+      tenantId: maharajaTenant.id,
+    },
+  })
+
+  console.log(`   ✅ Super admin user created: ${superAdminEmail}`)
+  console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
+  console.log(`✅ Seed complete!\n`)
+  console.log(`   Login URL   : http://maharaja.localhost:3000/login`)
+  console.log(`   Email       : ${superAdminEmail}`)
+  console.log(`   Password    : ${rawPassword}`)
+  console.log(`\n⚠️  Change this password immediately in production!`)
+  console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`)
+}
+
+main()
+  .catch((e) => {
+    console.error('❌ Seed failed:', e)
+    process.exit(1)
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })

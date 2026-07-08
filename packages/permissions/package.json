@@ -1,0 +1,17 @@
+{
+  "name": "@adwyzors/permissions",
+  "version": "0.0.1",
+  "private": true,
+  "license": "UNLICENSED",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": { ".": { "types": "./src/index.ts", "default": "./src/index.ts" } },
+  "scripts": { "build": "tsc", "typecheck": "tsc --noEmit" },
+  "dependencies": {
+    "@adwyzors/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@adwyzors/typescript-config": "workspace:*",
+    "typescript": "^5.7.2"
+  }
+}

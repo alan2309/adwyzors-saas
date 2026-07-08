@@ -1,0 +1,13 @@
+{
+  "name": "@adwyzors/jest-config",
+  "version": "0.0.1",
+  "private": true,
+  "license": "UNLICENSED",
+  "main": "base.js",
+  "files": ["base.js", "server.js"],
+  "dependencies": {
+    "ts-jest": "^29.2.5",
+    "@types/jest": "^29.5.14",
+    "jest-extended": "^4.0.2"
+  }
+}
