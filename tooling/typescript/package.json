@@ -3,5 +3,5 @@
   "version": "0.0.1",
   "private": true,
   "license": "UNLICENSED",
-  "files": ["base.json", "nextjs.json", "server.json"]
+  "files": ["base.json", "nextjs.json", "react.json", "server.json"]
 }

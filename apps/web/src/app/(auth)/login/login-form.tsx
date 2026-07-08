@@ -1,13 +1,23 @@
 'use client'
 
 import { useActionState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { loginAction } from './actions'
 
 export default function LoginForm() {
   const [state, formAction, isPending] = useActionState(loginAction, null)
+  const searchParams = useSearchParams()
+  const resetSuccess = searchParams.get('reset') === 'success'
 
   return (
     <form action={formAction} className="mt-8 space-y-6">
+      {resetSuccess && (
+        <div className="rounded-lg border border-green-900/50 bg-green-950/30 p-4 text-sm text-green-400">
+          Password reset successfully. Sign in with your new password.
+        </div>
+      )}
+
       {state?.error && (
         <div className="rounded-lg border border-red-900/50 bg-red-950/30 p-4 text-sm text-red-400">
           {state.error}
@@ -55,6 +65,15 @@ export default function LoginForm() {
       >
         {isPending ? 'Signing in...' : 'Sign In'}
       </button>
+
+      <div className="text-center">
+        <Link
+          href="/forgot-password"
+          className="text-sm text-zinc-400 hover:text-zinc-200 transition-colors"
+        >
+          Forgot your password?
+        </Link>
+      </div>
     </form>
   )
 }

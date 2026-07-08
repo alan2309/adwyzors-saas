@@ -32,6 +32,7 @@ model Tenant {
   users     User[]
   roles     Role[]
   auditLogs AuditLog[]
+  passwordResetTokens PasswordResetToken[]
 
   @@index([subdomain])
   @@index([customDomain])
@@ -62,6 +63,7 @@ model User {
   // Relations
   tenant    Tenant     @relation(fields: [tenantId], references: [id])
   userRoles UserRole[]
+  passwordResetTokens PasswordResetToken[]
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -190,4 +192,28 @@ model AuditLog {
   @@index([tenantId, userId])
   @@index([tenantId, createdAt])
   @@map("audit_logs")
+}
+
+// ============================================================
+// PASSWORD_RESET_TOKEN
+// One-time-use tokens for the password recovery flow.
+// Tokens expire after a set duration and can only be used once.
+// ============================================================
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  tenantId  String
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([tenantId])
+  @@index([token])
+  @@index([userId])
+  @@map("password_reset_tokens")
 }

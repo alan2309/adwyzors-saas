@@ -13,7 +13,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "jest"
   },
   "dependencies": {
     "@adwyzors/config": "workspace:*",
@@ -25,10 +26,14 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@adwyzors/jest-config": "workspace:*",
     "@adwyzors/typescript-config": "workspace:*",
     "@types/bcryptjs": "^2.4.6",
+    "@types/jest": "^29.5.14",
     "@types/node": "^22.0.0",
+    "jest": "^29.7.0",
     "next": "^15.1.0",
+    "ts-jest": "^29.2.5",
     "typescript": "^5.7.2"
   }
 }

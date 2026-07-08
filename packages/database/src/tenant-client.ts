@@ -9,6 +9,7 @@ const TENANT_SCOPED_MODELS = new Set([
   'User',
   'Role',
   'UserRole',
+  'PasswordResetToken',
 ])
 
 /**

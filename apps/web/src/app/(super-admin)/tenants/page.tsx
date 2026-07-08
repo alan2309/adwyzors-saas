@@ -1,60 +1,104 @@
-import { prisma } from '@adwyzors/database'
+import { prisma } from "@adwyzors/database";
+import {
+  Badge,
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@adwyzors/ui";
+import { Plus } from "lucide-react";
+import Link from "next/link";
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic";
 
 export default async function TenantsPage() {
-  // Query all tenants from the database
   const tenants = await prisma.tenant.findMany({
-    orderBy: { createdAt: 'desc' },
-  })
+    where: { deletedAt: null },
+    orderBy: { createdAt: "desc" },
+    include: {
+      _count: { select: { users: true } },
+    },
+  });
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-white">Tenants</h1>
-        <p className="text-zinc-400 mt-1">Manage and configure tenant instances on the platform.</p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Tenants</h1>
+          <p className="text-muted-foreground mt-1">
+            Manage all tenant instances on the platform.
+          </p>
+        </div>
+        <Button asChild>
+          <Link href="/tenants?create=true">
+            <Plus className="h-4 w-4 mr-2" />
+            Create Tenant
+          </Link>
+        </Button>
       </div>
 
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 overflow-hidden">
-        <table className="w-full text-left border-collapse text-sm">
-          <thead>
-            <tr className="border-b border-zinc-800 bg-zinc-900/50 text-zinc-400 uppercase font-semibold text-xs tracking-wider">
-              <th className="p-4">Name</th>
-              <th className="p-4">Subdomain</th>
-              <th className="p-4">Plan</th>
-              <th className="p-4">Status</th>
-              <th className="p-4">Created At</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-800">
-            {tenants.map((t) => (
-              <tr key={t.id} className="hover:bg-zinc-800/10 transition-colors">
-                <td className="p-4 font-semibold text-white">{t.name}</td>
-                <td className="p-4 text-zinc-400">{t.subdomain}.localhost</td>
-                <td className="p-4">
-                  <span className="text-xs px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 uppercase font-medium">
-                    {t.plan}
-                  </span>
-                </td>
-                <td className="p-4">
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded font-medium ${
-                      t.status === 'active'
-                        ? 'bg-green-950/50 text-green-400 border border-green-900/50'
-                        : 'bg-red-950/50 text-red-400 border border-red-900/50'
-                    }`}
+      <div className="rounded-lg border border-border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Subdomain</TableHead>
+              <TableHead>Plan</TableHead>
+              <TableHead>Users</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Created</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {tenants.map((tenant) => (
+              <TableRow key={tenant.id}>
+                <TableCell className="font-medium">
+                  <Link
+                    href={`/tenants/${tenant.id}`}
+                    className="hover:underline"
                   >
-                    {t.status}
-                  </span>
-                </td>
-                <td className="p-4 text-zinc-500">
-                  {new Date(t.createdAt).toLocaleDateString()}
-                </td>
-              </tr>
+                    {tenant.name}
+                  </Link>
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {tenant.subdomain}
+                </TableCell>
+                <TableCell>
+                  <Badge variant="secondary">{tenant.plan}</Badge>
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {tenant._count.users}
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant={
+                      tenant.status === "active" ? "success" : "destructive"
+                    }
+                  >
+                    {tenant.status}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {new Date(tenant.createdAt).toLocaleDateString()}
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+            {tenants.length === 0 && (
+              <TableRow>
+                <TableCell
+                  colSpan={6}
+                  className="text-center text-muted-foreground py-8"
+                >
+                  No tenants found. Create one to get started.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
     </div>
-  )
+  );
 }

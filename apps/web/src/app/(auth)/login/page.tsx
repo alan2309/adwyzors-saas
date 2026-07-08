@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { headers } from 'next/headers'
 import { resolveTenant } from '@adwyzors/tenant'
 import LoginForm from './login-form'
@@ -31,7 +32,9 @@ export default async function LoginPage() {
           </p>
         </div>
 
-        <LoginForm />
+        <Suspense fallback={<div className="h-64 animate-pulse rounded-lg bg-zinc-800/50" />}>
+          <LoginForm />
+        </Suspense>
 
         <div className="text-center text-xs text-zinc-500">
           Powered by Adwyzors. All rights reserved.
