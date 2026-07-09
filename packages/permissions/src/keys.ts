@@ -66,6 +66,15 @@ export const PERMISSIONS = {
     INVOICE_SEND: 'sales.invoice.send',
     PAYMENT_RECORD: 'sales.payment.record',
   },
+  MANUFACTURING: {
+    BOM_LIST: 'manufacturing.bom.list',
+    BOM_CREATE: 'manufacturing.bom.create',
+    BOM_EDIT: 'manufacturing.bom.edit',
+    ORDER_LIST: 'manufacturing.order.list',
+    ORDER_CREATE: 'manufacturing.order.create',
+    ORDER_START: 'manufacturing.order.start',
+    ORDER_COMPLETE: 'manufacturing.order.complete',
+  },
 } as const
 
 export type PermissionKey =
@@ -76,3 +85,4 @@ export type PermissionKey =
   | typeof PERMISSIONS.INVENTORY[keyof typeof PERMISSIONS.INVENTORY]
   | typeof PERMISSIONS.PURCHASE[keyof typeof PERMISSIONS.PURCHASE]
   | typeof PERMISSIONS.SALES[keyof typeof PERMISSIONS.SALES]
+  | typeof PERMISSIONS.MANUFACTURING[keyof typeof PERMISSIONS.MANUFACTURING]

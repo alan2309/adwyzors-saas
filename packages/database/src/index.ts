@@ -27,5 +27,8 @@ export type {
   SalesOrderItem,
   Invoice,
   Payment,
+  BillOfMaterials,
+  BOMItem,
+  ProductionOrder,
   Prisma,
 } from '@prisma/client'

@@ -348,6 +348,9 @@ model Product {
   purchaseOrderItems PurchaseOrderItem[]
   goodsReceiptItems  GoodsReceiptItem[]
   salesOrderItems    SalesOrderItem[]
+  boms               BillOfMaterials[]
+  bomComponents      BOMItem[]          @relation("BOMComponent")
+  productionOrders   ProductionOrder[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -376,6 +379,7 @@ model Warehouse {
   tenant         Tenant          @relation(fields: [tenantId], references: [id])
   stockMovements StockMovement[]
   goodsReceipts  GoodsReceipt[]
+  productionOrders ProductionOrder[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -659,4 +663,86 @@ model Payment {
   @@index([tenantId])
   @@index([invoiceId])
   @@map("payments")
+}
+
+// ============================================================
+// BILL_OF_MATERIALS (BOM)
+// Recipe for a finished product — lists raw materials/components.
+// ============================================================
+model BillOfMaterials {
+  id        String   @id @default(cuid())
+  tenantId  String
+  productId String   // Finished good
+  version   Int      @default(1)
+  status    String   @default("active") // active | draft | obsolete
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+
+  // Relations
+  product Product   @relation(fields: [productId], references: [id])
+  items   BOMItem[]
+  productionOrders ProductionOrder[]
+
+  @@unique([tenantId, productId, version])
+  @@index([tenantId])
+  @@index([tenantId, productId])
+  @@map("bill_of_materials")
+}
+
+// ============================================================
+// BOM_ITEM
+// Raw material/component entry in a BOM.
+// ============================================================
+model BOMItem {
+  id        String  @id @default(cuid())
+  bomId     String
+  productId String  // Raw material / component
+  quantity  Decimal
+  unit      String
+  scrap     Decimal @default(0) // Scrap percentage (e.g. 5 = 5%)
+
+  // Relations
+  bom     BillOfMaterials @relation(fields: [bomId], references: [id], onDelete: Cascade)
+  product Product         @relation("BOMComponent", fields: [productId], references: [id])
+
+  @@index([bomId])
+  @@map("bom_items")
+}
+
+// ============================================================
+// PRODUCTION_ORDER
+// Manufacturing work order — consumes raw materials, produces finished goods.
+// On start: outward StockMovement for raw materials.
+// On complete: inward StockMovement for finished product.
+// ============================================================
+model ProductionOrder {
+  id           String    @id @default(cuid())
+  tenantId     String
+  orderNumber  String
+  productId    String    // Finished product to produce
+  bomId        String
+  warehouseId  String    // Warehouse for material consumption and output
+  quantity     Decimal   // Quantity to produce
+  status       String    @default("planned") // planned | in_progress | completed | cancelled
+  plannedStart DateTime?
+  plannedEnd   DateTime?
+  actualStart  DateTime?
+  actualEnd    DateTime?
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  createdBy    String?
+  updatedBy    String?
+
+  // Relations
+  product   Product         @relation(fields: [productId], references: [id])
+  bom       BillOfMaterials @relation(fields: [bomId], references: [id])
+  warehouse Warehouse       @relation(fields: [warehouseId], references: [id])
+
+  @@unique([tenantId, orderNumber])
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@map("production_orders")
 }

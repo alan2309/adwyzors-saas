@@ -80,6 +80,15 @@ const PLATFORM_PERMISSIONS = [
   { key: 'sales.invoice.create', module: 'sales', resource: 'invoice', action: 'create', description: 'Create invoices' },
   { key: 'sales.invoice.send', module: 'sales', resource: 'invoice', action: 'send', description: 'Send invoices to customers' },
   { key: 'sales.payment.record', module: 'sales', resource: 'payment', action: 'record', description: 'Record payments against invoices' },
+
+  // Manufacturing
+  { key: 'manufacturing.bom.list', module: 'manufacturing', resource: 'bom', action: 'list', description: 'View bill of materials' },
+  { key: 'manufacturing.bom.create', module: 'manufacturing', resource: 'bom', action: 'create', description: 'Create bill of materials' },
+  { key: 'manufacturing.bom.edit', module: 'manufacturing', resource: 'bom', action: 'edit', description: 'Edit bill of materials' },
+  { key: 'manufacturing.order.list', module: 'manufacturing', resource: 'order', action: 'list', description: 'View production orders' },
+  { key: 'manufacturing.order.create', module: 'manufacturing', resource: 'order', action: 'create', description: 'Create production orders' },
+  { key: 'manufacturing.order.start', module: 'manufacturing', resource: 'order', action: 'start', description: 'Start production (consumes raw materials)' },
+  { key: 'manufacturing.order.complete', module: 'manufacturing', resource: 'order', action: 'complete', description: 'Complete production (produces finished goods)' },
 ]
 
 async function main() {
@@ -163,9 +172,9 @@ async function main() {
     },
   })
 
-  // Assign all settings + CRM + inventory + purchase + sales permissions to TENANT_ADMIN
+  // Assign all settings + CRM + inventory + purchase + sales + manufacturing permissions to TENANT_ADMIN
   const tenantPermissions = await prisma.permission.findMany({
-    where: { module: { in: ['settings', 'crm', 'inventory', 'purchase', 'sales', 'audit'] } },
+    where: { module: { in: ['settings', 'crm', 'inventory', 'purchase', 'sales', 'manufacturing', 'audit'] } },
   })
   for (const perm of tenantPermissions) {
     await prisma.rolePermission.upsert({

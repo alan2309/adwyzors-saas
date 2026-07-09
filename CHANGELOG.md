@@ -379,3 +379,56 @@ apps/web/src/app/(platform)/layout.tsx ← MODIFIED: Purchase + Sales nav
 ```
 
 ---
+
+## Phase 6 — Manufacturing Module
+
+**Completed**: 2026-07-08  
+**Scope**: Bill of Materials, Production Orders with automatic stock movement on start/complete
+
+---
+
+### New Database Models (3)
+
+| Model | Purpose |
+|-------|---------|
+| `BillOfMaterials` | Recipe for finished product (tenantId, productId, version, status, items) |
+| `BOMItem` | Component entry (productId, quantity, unit, scrap %) |
+| `ProductionOrder` | Work order (orderNumber, productId, bomId, warehouseId, quantity, status, planned/actual dates) |
+
+Migration: `add_manufacturing_models`
+
+### Key Business Logic
+
+- **Start production** → outward StockMovement for each BOM item: `qty × bomItemQty × (1 + scrap/100)`
+- **Complete production** → inward StockMovement for finished product (quantity produced)
+- **BOM versioning** → auto-increment version per product, unique (tenantId, productId, version)
+- **Auto-numbering** → MO-0001 sequential per tenant
+
+### Permission Keys (7 new, 54 total)
+
+`manufacturing.bom.list`, `.create`, `.edit`, `manufacturing.order.list`, `.create`, `.start`, `.complete`
+
+### API Routes
+
+**BOM** (`/api/manufacturing/bom`):
+- `GET /` — paginated, search by product name
+- `POST /` — create with components (auto-version)
+- `GET /[id]` — detail with items + product info
+
+**Production Orders** (`/api/manufacturing/orders`):
+- `GET /` — paginated, filter by status
+- `POST /` — create (auto-number MO-0001)
+- `GET /[id]` — detail with BOM items + warehouse
+- `PATCH /[id]` — start (consumes materials), complete (produces output), cancel
+
+### UI Pages
+
+- `/manufacturing` — production orders list
+- `/manufacturing/bom` — BOM list
+- **Sidebar** — "Manufacturing" nav item with Factory icon
+
+### Tests (11 new, 138 total)
+
+- BOM DTO (items required, scrap 0-100), Production Order DTO (positive qty, required fields), material consumption formula
+
+---
