@@ -301,3 +301,81 @@ apps/web/src/app/(platform)/layout.tsx        ← MODIFIED: Inventory nav
 ```
 
 ---
+
+## Phase 5 — Purchase & Sales Modules
+
+**Completed**: 2026-07-08  
+**Scope**: Vendors, purchase orders, goods receipts (with stock inward), sales orders, invoices, payments
+
+---
+
+### New Database Models (9)
+
+| Model | Purpose |
+|-------|---------|
+| `Vendor` | Supplier entity (code, name, gstin, paymentTerms) |
+| `PurchaseOrder` | PO document (poNumber, vendorId, status, totalAmount) |
+| `PurchaseOrderItem` | Line items on a PO |
+| `GoodsReceipt` | Receipt of goods against a PO (triggers StockMovement) |
+| `GoodsReceiptItem` | Line items on a GR |
+| `SalesOrder` | Customer order (orderNumber, customerId, status, totalAmount, discount, taxAmount) |
+| `SalesOrderItem` | Line items on a SO |
+| `Invoice` | Billing document (invoiceNumber, status, totalAmount, paidAmount) |
+| `Payment` | Payment against invoice (amount, method, reference, paidAt) |
+
+Migration: `add_purchase_sales_models`
+
+### Permission Keys (15 new, 47 total)
+
+**Purchase**: `purchase.vendor.list`, `.create`, `.edit`, `purchase.po.list`, `.create`, `.approve`, `purchase.gr.create`  
+**Sales**: `sales.order.list`, `.create`, `.confirm`, `.cancel`, `sales.invoice.list`, `.create`, `.send`, `sales.payment.record`
+
+### API Routes
+
+**Purchase** (`/api/purchase`):
+- `GET /vendors` — paginated vendor list
+- `POST /vendors` — create (auto-code V-0001)
+- `GET /orders` — PO list (paginated, filter by status)
+- `POST /orders` — create PO with line items (auto-calc totals, auto-number PO-0001)
+- `GET /orders/[id]` — PO detail with vendor + items
+- `PATCH /orders/[id]` — status transitions (sent/confirmed/received/cancelled)
+- `POST /orders/[id]/receive` — create GoodsReceipt + inward StockMovements (transaction)
+
+**Sales** (`/api/sales`):
+- `GET /orders` — SO list (paginated, filter by status)
+- `POST /orders` — create SO with line items (auto-calc tax/totals, auto-number SO-0001)
+- `GET /orders/[id]` — SO detail with customer + items + invoices
+- `PATCH /orders/[id]` — status transitions (confirmed/shipped/delivered/cancelled)
+- `GET /invoices` — invoice list (paginated, filter by status)
+- `POST /invoices` — create invoice (auto-number INV-0001) OR record payment (auto-updates paidAmount/status)
+
+### Key Business Logic
+
+- **Goods Receipt → Stock**: Creating a GR triggers inward StockMovements for each item in a database transaction
+- **Line item totals**: Auto-calculated (qty × unitPrice × (1 + taxRate/100) for PO, with discount for SO)
+- **Payment tracking**: Recording a payment updates invoice.paidAmount; when paidAmount >= totalAmount, status flips to "paid"
+- **Auto-numbering**: PO-0001, SO-0001, INV-0001, V-0001 (sequential per tenant)
+
+### UI Pages
+
+- `/purchase` — PO list table
+- `/purchase/vendors` — vendor list table
+- `/sales` — SO list table with customer, items, amount, invoices count
+- `/sales/invoices` — invoice list table with total, paid, status
+- **Sidebar** — "Purchase" (ShoppingCart) + "Sales" (Receipt) nav items
+
+### Tests (17 new, 127 total)
+
+- PO/SO/Invoice/Payment DTO validation, line item calculation logic
+
+### Key Files Added
+
+```
+apps/web/src/app/api/purchase/         ← NEW: vendors + orders + receive routes
+apps/web/src/app/api/sales/            ← NEW: orders + invoices routes
+apps/web/src/app/(platform)/purchase/  ← NEW: PO + vendor list pages
+apps/web/src/app/(platform)/sales/     ← NEW: SO + invoice list pages
+apps/web/src/app/(platform)/layout.tsx ← MODIFIED: Purchase + Sales nav
+```
+
+---

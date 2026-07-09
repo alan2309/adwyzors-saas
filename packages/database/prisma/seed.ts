@@ -61,6 +61,25 @@ const PLATFORM_PERMISSIONS = [
   { key: 'inventory.movement.view', module: 'inventory', resource: 'movement', action: 'view', description: 'View stock movements' },
   { key: 'inventory.movement.create', module: 'inventory', resource: 'movement', action: 'create', description: 'Create stock movements' },
   { key: 'inventory.adjustment.approve', module: 'inventory', resource: 'adjustment', action: 'approve', description: 'Approve stock adjustments' },
+
+  // Purchase
+  { key: 'purchase.vendor.list', module: 'purchase', resource: 'vendor', action: 'list', description: 'View vendor list' },
+  { key: 'purchase.vendor.create', module: 'purchase', resource: 'vendor', action: 'create', description: 'Create a vendor' },
+  { key: 'purchase.vendor.edit', module: 'purchase', resource: 'vendor', action: 'edit', description: 'Edit vendor details' },
+  { key: 'purchase.po.list', module: 'purchase', resource: 'po', action: 'list', description: 'View purchase orders' },
+  { key: 'purchase.po.create', module: 'purchase', resource: 'po', action: 'create', description: 'Create purchase orders' },
+  { key: 'purchase.po.approve', module: 'purchase', resource: 'po', action: 'approve', description: 'Approve purchase orders' },
+  { key: 'purchase.gr.create', module: 'purchase', resource: 'gr', action: 'create', description: 'Create goods receipts' },
+
+  // Sales
+  { key: 'sales.order.list', module: 'sales', resource: 'order', action: 'list', description: 'View sales orders' },
+  { key: 'sales.order.create', module: 'sales', resource: 'order', action: 'create', description: 'Create sales orders' },
+  { key: 'sales.order.confirm', module: 'sales', resource: 'order', action: 'confirm', description: 'Confirm sales orders' },
+  { key: 'sales.order.cancel', module: 'sales', resource: 'order', action: 'cancel', description: 'Cancel sales orders' },
+  { key: 'sales.invoice.list', module: 'sales', resource: 'invoice', action: 'list', description: 'View invoices' },
+  { key: 'sales.invoice.create', module: 'sales', resource: 'invoice', action: 'create', description: 'Create invoices' },
+  { key: 'sales.invoice.send', module: 'sales', resource: 'invoice', action: 'send', description: 'Send invoices to customers' },
+  { key: 'sales.payment.record', module: 'sales', resource: 'payment', action: 'record', description: 'Record payments against invoices' },
 ]
 
 async function main() {
@@ -144,9 +163,9 @@ async function main() {
     },
   })
 
-  // Assign all settings + CRM + inventory permissions to TENANT_ADMIN
+  // Assign all settings + CRM + inventory + purchase + sales permissions to TENANT_ADMIN
   const tenantPermissions = await prisma.permission.findMany({
-    where: { module: { in: ['settings', 'crm', 'inventory', 'audit'] } },
+    where: { module: { in: ['settings', 'crm', 'inventory', 'purchase', 'sales', 'audit'] } },
   })
   for (const perm of tenantPermissions) {
     await prisma.rolePermission.upsert({

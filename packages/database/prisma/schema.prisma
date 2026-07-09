@@ -37,6 +37,7 @@ model Tenant {
   customers Customer[]
   products  Product[]
   warehouses Warehouse[]
+  vendors   Vendor[]
 
   @@index([subdomain])
   @@index([customDomain])
@@ -277,6 +278,8 @@ model Customer {
   // Relations
   tenant   Tenant    @relation(fields: [tenantId], references: [id])
   contacts Contact[]
+  salesOrders SalesOrder[]
+  invoices    Invoice[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -342,6 +345,9 @@ model Product {
   // Relations
   tenant         Tenant          @relation(fields: [tenantId], references: [id])
   stockMovements StockMovement[]
+  purchaseOrderItems PurchaseOrderItem[]
+  goodsReceiptItems  GoodsReceiptItem[]
+  salesOrderItems    SalesOrderItem[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -369,6 +375,7 @@ model Warehouse {
   // Relations
   tenant         Tenant          @relation(fields: [tenantId], references: [id])
   stockMovements StockMovement[]
+  goodsReceipts  GoodsReceipt[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -405,4 +412,251 @@ model StockMovement {
   @@index([tenantId, productId, warehouseId])
   @@index([tenantId, createdAt])
   @@map("stock_movements")
+}
+
+// ============================================================
+// VENDOR
+// Supplier entity for purchases. Tenant-scoped.
+// ============================================================
+model Vendor {
+  id           String    @id @default(cuid())
+  tenantId     String
+  code         String
+  name         String
+  email        String?
+  phone        String?
+  gstin        String?
+  address      Json?
+  paymentTerms Int?
+  status       String    @default("active")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  createdBy    String?
+  updatedBy    String?
+  deletedAt    DateTime?
+  version      Int       @default(1)
+
+  // Relations
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  purchaseOrders PurchaseOrder[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([tenantId, deletedAt])
+  @@map("vendors")
+}
+
+// ============================================================
+// PURCHASE_ORDER
+// Document for ordering goods from a vendor.
+// ============================================================
+model PurchaseOrder {
+  id           String    @id @default(cuid())
+  tenantId     String
+  poNumber     String
+  vendorId     String
+  status       String    @default("draft") // draft | sent | confirmed | received | cancelled
+  orderDate    DateTime
+  expectedDate DateTime?
+  totalAmount  Decimal   @default(0)
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  createdBy    String?
+  updatedBy    String?
+  deletedAt    DateTime?
+  version      Int       @default(1)
+
+  // Relations
+  vendor   Vendor              @relation(fields: [vendorId], references: [id])
+  items    PurchaseOrderItem[]
+  receipts GoodsReceipt[]
+
+  @@unique([tenantId, poNumber])
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, vendorId])
+  @@map("purchase_orders")
+}
+
+// ============================================================
+// PURCHASE_ORDER_ITEM
+// Line item on a purchase order.
+// ============================================================
+model PurchaseOrderItem {
+  id        String  @id @default(cuid())
+  poId      String
+  productId String
+  quantity  Decimal
+  unit      String
+  unitPrice Decimal
+  taxRate   Decimal @default(0)
+  total     Decimal
+
+  // Relations
+  po      PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+  product Product       @relation(fields: [productId], references: [id])
+
+  @@index([poId])
+  @@map("purchase_order_items")
+}
+
+// ============================================================
+// GOODS_RECEIPT
+// Records receipt of goods against a PO. Triggers inward StockMovement.
+// ============================================================
+model GoodsReceipt {
+  id          String   @id @default(cuid())
+  tenantId    String
+  poId        String
+  warehouseId String
+  receivedAt  DateTime @default(now())
+  notes       String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  po        PurchaseOrder      @relation(fields: [poId], references: [id])
+  warehouse Warehouse          @relation(fields: [warehouseId], references: [id])
+  items     GoodsReceiptItem[]
+
+  @@index([tenantId])
+  @@index([poId])
+  @@map("goods_receipts")
+}
+
+// ============================================================
+// GOODS_RECEIPT_ITEM
+// Line item on a goods receipt.
+// ============================================================
+model GoodsReceiptItem {
+  id        String  @id @default(cuid())
+  receiptId String
+  productId String
+  quantity  Decimal
+  unit      String
+
+  // Relations
+  receipt GoodsReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  product Product      @relation(fields: [productId], references: [id])
+
+  @@index([receiptId])
+  @@map("goods_receipt_items")
+}
+
+// ============================================================
+// SALES_ORDER
+// Customer order document.
+// ============================================================
+model SalesOrder {
+  id           String    @id @default(cuid())
+  tenantId     String
+  orderNumber  String
+  customerId   String
+  status       String    @default("draft") // draft | confirmed | shipped | delivered | cancelled
+  orderDate    DateTime
+  deliveryDate DateTime?
+  totalAmount  Decimal   @default(0)
+  discount     Decimal   @default(0)
+  taxAmount    Decimal   @default(0)
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  createdBy    String?
+  updatedBy    String?
+  deletedAt    DateTime?
+  version      Int       @default(1)
+
+  // Relations
+  customer Customer         @relation(fields: [customerId], references: [id])
+  items    SalesOrderItem[]
+  invoices Invoice[]
+
+  @@unique([tenantId, orderNumber])
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, customerId])
+  @@map("sales_orders")
+}
+
+// ============================================================
+// SALES_ORDER_ITEM
+// Line item on a sales order.
+// ============================================================
+model SalesOrderItem {
+  id        String  @id @default(cuid())
+  soId      String
+  productId String
+  quantity  Decimal
+  unit      String
+  unitPrice Decimal
+  discount  Decimal @default(0)
+  taxRate   Decimal @default(0)
+  total     Decimal
+
+  // Relations
+  so      SalesOrder @relation(fields: [soId], references: [id], onDelete: Cascade)
+  product Product    @relation(fields: [productId], references: [id])
+
+  @@index([soId])
+  @@map("sales_order_items")
+}
+
+// ============================================================
+// INVOICE
+// Billing document linked to a sales order.
+// ============================================================
+model Invoice {
+  id            String    @id @default(cuid())
+  tenantId      String
+  invoiceNumber String
+  soId          String?
+  customerId    String
+  status        String    @default("draft") // draft | sent | paid | overdue | cancelled
+  invoiceDate   DateTime
+  dueDate       DateTime
+  totalAmount   Decimal   @default(0)
+  paidAmount    Decimal   @default(0)
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  createdBy     String?
+  updatedBy     String?
+  deletedAt     DateTime?
+  version       Int       @default(1)
+
+  // Relations
+  salesOrder SalesOrder? @relation(fields: [soId], references: [id])
+  customer   Customer    @relation(fields: [customerId], references: [id])
+  payments   Payment[]
+
+  @@unique([tenantId, invoiceNumber])
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, customerId])
+  @@map("invoices")
+}
+
+// ============================================================
+// PAYMENT
+// Payment received against an invoice.
+// ============================================================
+model Payment {
+  id          String   @id @default(cuid())
+  tenantId    String
+  invoiceId   String
+  amount      Decimal
+  method      String   // cash | bank_transfer | cheque | upi | card
+  reference   String?  // Transaction ID, cheque number
+  paidAt      DateTime
+  notes       String?
+  createdAt   DateTime @default(now())
+  createdBy   String?
+
+  // Relations
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+
+  @@index([tenantId])
+  @@index([invoiceId])
+  @@map("payments")
 }

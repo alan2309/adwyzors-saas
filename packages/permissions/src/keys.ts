@@ -47,6 +47,25 @@ export const PERMISSIONS = {
     MOVEMENT_CREATE: 'inventory.movement.create',
     ADJUSTMENT_APPROVE: 'inventory.adjustment.approve',
   },
+  PURCHASE: {
+    VENDOR_LIST: 'purchase.vendor.list',
+    VENDOR_CREATE: 'purchase.vendor.create',
+    VENDOR_EDIT: 'purchase.vendor.edit',
+    PO_LIST: 'purchase.po.list',
+    PO_CREATE: 'purchase.po.create',
+    PO_APPROVE: 'purchase.po.approve',
+    GR_CREATE: 'purchase.gr.create',
+  },
+  SALES: {
+    ORDER_LIST: 'sales.order.list',
+    ORDER_CREATE: 'sales.order.create',
+    ORDER_CONFIRM: 'sales.order.confirm',
+    ORDER_CANCEL: 'sales.order.cancel',
+    INVOICE_LIST: 'sales.invoice.list',
+    INVOICE_CREATE: 'sales.invoice.create',
+    INVOICE_SEND: 'sales.invoice.send',
+    PAYMENT_RECORD: 'sales.payment.record',
+  },
 } as const
 
 export type PermissionKey =
@@ -55,3 +74,5 @@ export type PermissionKey =
   | typeof PERMISSIONS.AUDIT[keyof typeof PERMISSIONS.AUDIT]
   | typeof PERMISSIONS.CRM[keyof typeof PERMISSIONS.CRM]
   | typeof PERMISSIONS.INVENTORY[keyof typeof PERMISSIONS.INVENTORY]
+  | typeof PERMISSIONS.PURCHASE[keyof typeof PERMISSIONS.PURCHASE]
+  | typeof PERMISSIONS.SALES[keyof typeof PERMISSIONS.SALES]

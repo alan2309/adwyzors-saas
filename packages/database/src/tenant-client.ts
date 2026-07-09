@@ -16,6 +16,11 @@ const TENANT_SCOPED_MODELS = new Set([
   'Product',
   'Warehouse',
   'StockMovement',
+  'Vendor',
+  'PurchaseOrder',
+  'SalesOrder',
+  'Invoice',
+  'Payment',
 ])
 
 /**
