@@ -32,6 +32,21 @@ const TENANT_SCOPED_MODELS = new Set([
 ])
 
 /**
+ * Subset of TENANT_SCOPED_MODELS that also have a deletedAt column.
+ * Only these models get the automatic `deletedAt: null` soft-delete filter.
+ */
+const SOFT_DELETE_MODELS = new Set([
+  'User',
+  'Role',
+  'Customer',
+  'Product',
+  'Vendor',
+  'PurchaseOrder',
+  'SalesOrder',
+  'Invoice',
+])
+
+/**
  * tenantPrisma — the only way application code should query the database.
  *
  * Returns a Prisma client extension that automatically:
@@ -57,10 +72,11 @@ export function tenantPrisma(tenantId: string) {
           if (TENANT_SCOPED_MODELS.has(model)) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const where = args.where as Record<string, unknown> | undefined
+            const scopeFilter: Record<string, unknown> = { tenantId }
+            if (SOFT_DELETE_MODELS.has(model)) scopeFilter.deletedAt = null
             ;(args as { where: Record<string, unknown> }).where = {
               ...where,
-              tenantId,
-              deletedAt: null,
+              ...scopeFilter,
             }
           }
           return query(args)
@@ -69,10 +85,11 @@ export function tenantPrisma(tenantId: string) {
           if (TENANT_SCOPED_MODELS.has(model)) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const where = args.where as Record<string, unknown> | undefined
+            const scopeFilter: Record<string, unknown> = { tenantId }
+            if (SOFT_DELETE_MODELS.has(model)) scopeFilter.deletedAt = null
             ;(args as { where: Record<string, unknown> }).where = {
               ...where,
-              tenantId,
-              deletedAt: null,
+              ...scopeFilter,
             }
           }
           return query(args)
@@ -81,10 +98,11 @@ export function tenantPrisma(tenantId: string) {
           if (TENANT_SCOPED_MODELS.has(model)) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const where = args.where as Record<string, unknown> | undefined
+            const scopeFilter: Record<string, unknown> = { tenantId }
+            if (SOFT_DELETE_MODELS.has(model)) scopeFilter.deletedAt = null
             ;(args as { where: Record<string, unknown> }).where = {
               ...where,
-              tenantId,
-              deletedAt: null,
+              ...scopeFilter,
             }
           }
           return query(args)

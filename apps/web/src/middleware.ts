@@ -61,7 +61,7 @@ export async function middleware(request: NextRequest) {
     secret: process.env['AUTH_SECRET'] ?? '',
   })
 
-  const isAuthRoute = pathname.startsWith('/login')
+  const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/forgot-password') || pathname.startsWith('/reset-password')
   const isSuperAdminRoute =
     pathname.startsWith('/tenants') ||
     pathname.startsWith('/billing') ||
