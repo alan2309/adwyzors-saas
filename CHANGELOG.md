@@ -432,3 +432,59 @@ Migration: `add_manufacturing_models`
 - BOM DTO (items required, scrap 0-100), Production Order DTO (positive qty, required fields), material consumption formula
 
 ---
+
+## Phase 7 — Finance & Accounting Module
+
+**Completed**: 2026-07-08  
+**Scope**: Chart of Accounts, double-entry Journal Entries, financial reports (Trial Balance, P&L, Balance Sheet), Tax configuration
+
+---
+
+### New Database Models (4)
+
+| Model | Purpose |
+|-------|---------|
+| `Account` | Chart of Accounts (code, name, type: asset/liability/equity/revenue/expense, parentId, isActive) |
+| `JournalEntry` | Accounting transaction (entryNumber, date, description, reference, status, lines) |
+| `JournalLine` | Debit/credit entry (accountId, debit, credit, narration) |
+| `TaxConfig` | GST/tax rate configurations (name, rate, type: gst/cess/custom) |
+
+Migration: `add_finance_models`
+
+### Key Business Logic
+
+- **Double-entry enforcement**: Total debits MUST equal total credits (validated at API with 0.01 tolerance)
+- **Line rules**: Each line must have either debit OR credit (not both, not neither)
+- **Financial reports**: Computed by aggregating all posted JournalLines grouped by account type
+- **Auto-numbering**: JE-00001 sequential per tenant
+
+### Permission Keys (7 new, 61 total)
+
+`finance.account.list`, `.create`, `.edit`, `finance.journal.list`, `.create`, `finance.report.view`, `finance.tax.manage`
+
+### API Routes
+
+**Accounts** (`/api/finance/accounts`):
+- `GET /` — list all accounts (filter by type)
+- `POST /` — create (unique code per tenant)
+
+**Journals** (`/api/finance/journals`):
+- `GET /` — paginated list with search
+- `POST /` — create with double-entry validation
+
+**Reports** (`/api/finance/reports`):
+- `GET /?type=trial_balance` — all accounts with debit/credit/balance
+- `GET /?type=profit_loss` — revenue vs expenses, net profit
+- `GET /?type=balance_sheet` — assets, liabilities, equity
+
+### UI Pages
+
+- `/finance` — Chart of Accounts (grouped by type: asset, liability, equity, revenue, expense)
+- `/finance/journals` — Journal entries list
+- **Sidebar** — "Finance" nav item with Landmark icon
+
+### Tests (11 new, 149 total)
+
+- Account DTO (5 types valid, invalid rejected), Journal DTO (min 2 lines), double-entry validation (balanced, multi-line, decimal precision, invalid cases)
+
+---

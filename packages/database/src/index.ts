@@ -30,5 +30,9 @@ export type {
   BillOfMaterials,
   BOMItem,
   ProductionOrder,
+  Account,
+  JournalEntry,
+  JournalLine,
+  TaxConfig,
   Prisma,
 } from '@prisma/client'

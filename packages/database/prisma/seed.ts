@@ -89,6 +89,15 @@ const PLATFORM_PERMISSIONS = [
   { key: 'manufacturing.order.create', module: 'manufacturing', resource: 'order', action: 'create', description: 'Create production orders' },
   { key: 'manufacturing.order.start', module: 'manufacturing', resource: 'order', action: 'start', description: 'Start production (consumes raw materials)' },
   { key: 'manufacturing.order.complete', module: 'manufacturing', resource: 'order', action: 'complete', description: 'Complete production (produces finished goods)' },
+
+  // Finance
+  { key: 'finance.account.list', module: 'finance', resource: 'account', action: 'list', description: 'View chart of accounts' },
+  { key: 'finance.account.create', module: 'finance', resource: 'account', action: 'create', description: 'Create ledger accounts' },
+  { key: 'finance.account.edit', module: 'finance', resource: 'account', action: 'edit', description: 'Edit ledger accounts' },
+  { key: 'finance.journal.list', module: 'finance', resource: 'journal', action: 'list', description: 'View journal entries' },
+  { key: 'finance.journal.create', module: 'finance', resource: 'journal', action: 'create', description: 'Create journal entries' },
+  { key: 'finance.report.view', module: 'finance', resource: 'report', action: 'view', description: 'View financial reports (P&L, Balance Sheet)' },
+  { key: 'finance.tax.manage', module: 'finance', resource: 'tax', action: 'manage', description: 'Manage tax configurations (GST)' },
 ]
 
 async function main() {
@@ -174,7 +183,7 @@ async function main() {
 
   // Assign all settings + CRM + inventory + purchase + sales + manufacturing permissions to TENANT_ADMIN
   const tenantPermissions = await prisma.permission.findMany({
-    where: { module: { in: ['settings', 'crm', 'inventory', 'purchase', 'sales', 'manufacturing', 'audit'] } },
+    where: { module: { in: ['settings', 'crm', 'inventory', 'purchase', 'sales', 'manufacturing', 'finance', 'audit'] } },
   })
   for (const perm of tenantPermissions) {
     await prisma.rolePermission.upsert({

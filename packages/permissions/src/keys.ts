@@ -75,6 +75,15 @@ export const PERMISSIONS = {
     ORDER_START: 'manufacturing.order.start',
     ORDER_COMPLETE: 'manufacturing.order.complete',
   },
+  FINANCE: {
+    ACCOUNT_LIST: 'finance.account.list',
+    ACCOUNT_CREATE: 'finance.account.create',
+    ACCOUNT_EDIT: 'finance.account.edit',
+    JOURNAL_LIST: 'finance.journal.list',
+    JOURNAL_CREATE: 'finance.journal.create',
+    REPORT_VIEW: 'finance.report.view',
+    TAX_MANAGE: 'finance.tax.manage',
+  },
 } as const
 
 export type PermissionKey =
@@ -86,3 +95,4 @@ export type PermissionKey =
   | typeof PERMISSIONS.PURCHASE[keyof typeof PERMISSIONS.PURCHASE]
   | typeof PERMISSIONS.SALES[keyof typeof PERMISSIONS.SALES]
   | typeof PERMISSIONS.MANUFACTURING[keyof typeof PERMISSIONS.MANUFACTURING]
+  | typeof PERMISSIONS.FINANCE[keyof typeof PERMISSIONS.FINANCE]

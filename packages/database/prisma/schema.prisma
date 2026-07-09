@@ -746,3 +746,95 @@ model ProductionOrder {
   @@index([tenantId, status])
   @@map("production_orders")
 }
+
+// ============================================================
+// ACCOUNT (Chart of Accounts)
+// Double-entry accounting ledger accounts. Tenant-scoped.
+// Types: asset, liability, equity, revenue, expense
+// ============================================================
+model Account {
+  id          String   @id @default(cuid())
+  tenantId    String
+  code        String   // e.g. "1001", "3001"
+  name        String
+  type        String   // asset | liability | equity | revenue | expense
+  parentId    String?  // For hierarchical chart of accounts
+  isActive    Boolean  @default(true)
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   String?
+
+  // Relations
+  journalLines JournalLine[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([tenantId, type])
+  @@map("accounts")
+}
+
+// ============================================================
+// JOURNAL_ENTRY
+// A complete accounting transaction. Contains debit/credit lines.
+// Total debits MUST equal total credits (enforced at API level).
+// ============================================================
+model JournalEntry {
+  id          String   @id @default(cuid())
+  tenantId    String
+  entryNumber String
+  date        DateTime
+  description String
+  reference   String?  // Invoice number, PO number, etc.
+  referenceId String?
+  status      String   @default("posted") // posted | draft | reversed
+  createdAt   DateTime @default(now())
+  createdBy   String?
+
+  // Relations
+  lines JournalLine[]
+
+  @@unique([tenantId, entryNumber])
+  @@index([tenantId])
+  @@index([tenantId, date])
+  @@index([tenantId, status])
+  @@map("journal_entries")
+}
+
+// ============================================================
+// JOURNAL_LINE
+// Single debit or credit entry within a journal entry.
+// ============================================================
+model JournalLine {
+  id        String  @id @default(cuid())
+  entryId   String
+  accountId String
+  debit     Decimal @default(0)
+  credit    Decimal @default(0)
+  narration String?
+
+  // Relations
+  entry   JournalEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  account Account      @relation(fields: [accountId], references: [id])
+
+  @@index([entryId])
+  @@index([accountId])
+  @@map("journal_lines")
+}
+
+// ============================================================
+// TAX_CONFIG
+// Tax rate configurations (GST slabs for India). Tenant-scoped.
+// ============================================================
+model TaxConfig {
+  id       String  @id @default(cuid())
+  tenantId String
+  name     String  // e.g. "GST 18%", "GST 5%", "Exempt"
+  rate     Decimal // e.g. 18, 5, 0
+  type     String  // gst | cess | custom
+  isActive Boolean @default(true)
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("tax_configs")
+}
