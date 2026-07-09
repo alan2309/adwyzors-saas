@@ -34,5 +34,8 @@ export type {
   JournalEntry,
   JournalLine,
   TaxConfig,
+  NumberSequence,
+  AutomationRule,
+  ReportTemplate,
   Prisma,
 } from '@prisma/client'

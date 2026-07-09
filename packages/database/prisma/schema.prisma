@@ -838,3 +838,71 @@ model TaxConfig {
   @@index([tenantId])
   @@map("tax_configs")
 }
+
+// ============================================================
+// NUMBER_SEQUENCE
+// Configurable auto-numbering patterns per entity type.
+// e.g. PO prefix "PO-", SO prefix "SO-", padding 4 = PO-0001
+// ============================================================
+model NumberSequence {
+  id         String @id @default(cuid())
+  tenantId   String
+  entityType String // "purchase_order" | "sales_order" | "invoice" | "customer" | "product" | "production_order"
+  prefix     String // e.g. "PO-", "INV-"
+  padding    Int    @default(4)
+  nextValue  Int    @default(1)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([tenantId, entityType])
+  @@index([tenantId])
+  @@map("number_sequences")
+}
+
+// ============================================================
+// AUTOMATION_RULE
+// Event-driven automation configuration per tenant.
+// e.g. trigger: "sales_order.created", condition: { totalAmount > 100000 }, action: "notify.email"
+// ============================================================
+model AutomationRule {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  trigger   String   // Domain event: "sales_order.created", "invoice.overdue", etc.
+  condition Json     @default("{}") // { field, operator, value }
+  action    String   // "notify.email" | "notify.inapp" | "update.status" | "webhook"
+  config    Json     @default("{}") // Action-specific config (template, recipients, url)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?
+
+  @@index([tenantId])
+  @@index([tenantId, trigger])
+  @@index([tenantId, isActive])
+  @@map("automation_rules")
+}
+
+// ============================================================
+// REPORT_TEMPLATE
+// Configurable report definitions stored per tenant.
+// Used by the export worker to generate scheduled or on-demand reports.
+// ============================================================
+model ReportTemplate {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  description String?
+  entityType  String   // "customers" | "products" | "sales_orders" | "invoices" | etc.
+  columns     Json     // Array of column definitions
+  filters     Json     @default("{}") // Default filters
+  schedule    String?  // Cron expression for scheduled reports (null = on-demand)
+  format      String   @default("csv") // "csv" | "xlsx" | "pdf"
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  createdBy   String?
+
+  @@index([tenantId])
+  @@map("report_templates")
+}

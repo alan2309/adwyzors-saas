@@ -488,3 +488,94 @@ Migration: `add_finance_models`
 - Account DTO (5 types valid, invalid rejected), Journal DTO (min 2 lines), double-entry validation (balanced, multi-line, decimal precision, invalid cases)
 
 ---
+
+## Phase 8 — Reports, Automation & Settings
+
+**Completed**: 2026-07-08  
+**Scope**: Configurable number sequences, event-driven automation rules, report templates with export, company settings
+
+---
+
+### New Database Models (3)
+
+| Model | Purpose |
+|-------|---------|
+| `NumberSequence` | Configurable auto-numbering (entityType, prefix, padding, nextValue) |
+| `AutomationRule` | Event-driven rules (trigger, condition JSON, action, config JSON, isActive) |
+| `ReportTemplate` | Export template definitions (entityType, columns, filters, schedule, format) |
+
+Migration: `add_settings_automation_reports`
+
+### Permission Keys (8 new, 69 total)
+
+**Reports**: `reports.template.list`, `.create`, `.edit`, `reports.generate`  
+**Automation**: `automation.rule.list`, `.create`, `.edit`, `.toggle`
+
+### API Routes
+
+**Settings** (`/api/settings`):
+- `GET /company` — current tenant config
+- `PATCH /company` — update tenant name/config
+- `GET /sequences` — list number sequences
+- `POST /sequences` — upsert sequence (prefix + padding per entity type)
+
+**Automation** (`/api/automation/rules`):
+- `GET /` — list all rules
+- `POST /` — create rule (trigger + condition + action)
+- `PATCH /` — update rule / toggle active state
+
+**Reports** (`/api/reports/templates`):
+- `GET /` — list templates
+- `POST /` — create template OR trigger report generation (enqueues export job)
+
+### Key Design
+
+- **Number Sequences**: Configurable prefix + padding per entity type. e.g. prefix="PO-", padding=4 → PO-0042
+- **Automation Rules**: Event-driven (trigger: domain event, condition: JSON rules, action: email/inapp/status/webhook). Stored as config, executed by automation worker.
+- **Report Templates**: Define columns + filters + format (csv/xlsx/pdf) + optional cron schedule. Generation enqueues to the export worker.
+
+### UI Pages
+
+- `/settings` — dashboard with cards linking to Users, Roles, Sequences, Automation, Reports
+
+### Tests (14 new, 163 total)
+
+- Automation rule DTO (4 valid actions, condition defaults, name validation)
+- Report template DTO (columns required, format default csv, all formats valid)
+- Number sequence DTO (padding default 4, max 10, formatted output)
+
+---
+
+## Project Completion Summary
+
+**All 8 phases complete** as of 2026-07-08.
+
+| Phase | Description | Models | API Routes | Tests |
+|-------|-------------|--------|------------|-------|
+| 1 | Multi-Tenant Core & Auth Engine | 1 new | 10 | 43 |
+| 2 | Background Jobs, Notifications & Email | 1 new | 3 | 30 |
+| 3 | CRM & Customer Management | 2 new | 8 | 20 |
+| 4 | Inventory Engine (Ledger-Based) | 3 new | 7 | 17 |
+| 5 | Purchase & Sales Modules | 9 new | 13 | 17 |
+| 6 | Manufacturing Module | 3 new | 6 | 11 |
+| 7 | Finance & Accounting | 4 new | 5 | 11 |
+| 8 | Reports, Automation & Settings | 3 new | 7 | 14 |
+
+**Totals**: 26 database models, 59 API routes, 69 permission keys, 163 unit tests, 16 packages, all typecheck/lint/build passing.
+
+### How to Run the Full Platform
+
+```bash
+pnpm install
+docker-compose up -d
+pnpm --filter @adwyzors/database db:migrate
+pnpm --filter @adwyzors/database db:seed
+pnpm typecheck   # 16/16
+pnpm lint        # 0 errors
+pnpm test        # 163 tests pass
+pnpm build       # 16/16
+pnpm --filter @adwyzors/web dev          # Web app on :3000
+pnpm --filter @adwyzors/worker dev       # Background workers
+```
+
+Login: `admin@adwyzors.com` / `Admin@Adwyzors2025!`

@@ -84,6 +84,18 @@ export const PERMISSIONS = {
     REPORT_VIEW: 'finance.report.view',
     TAX_MANAGE: 'finance.tax.manage',
   },
+  REPORTS: {
+    TEMPLATE_LIST: 'reports.template.list',
+    TEMPLATE_CREATE: 'reports.template.create',
+    TEMPLATE_EDIT: 'reports.template.edit',
+    GENERATE: 'reports.generate',
+  },
+  AUTOMATION: {
+    RULE_LIST: 'automation.rule.list',
+    RULE_CREATE: 'automation.rule.create',
+    RULE_EDIT: 'automation.rule.edit',
+    RULE_TOGGLE: 'automation.rule.toggle',
+  },
 } as const
 
 export type PermissionKey =
@@ -96,3 +108,5 @@ export type PermissionKey =
   | typeof PERMISSIONS.SALES[keyof typeof PERMISSIONS.SALES]
   | typeof PERMISSIONS.MANUFACTURING[keyof typeof PERMISSIONS.MANUFACTURING]
   | typeof PERMISSIONS.FINANCE[keyof typeof PERMISSIONS.FINANCE]
+  | typeof PERMISSIONS.REPORTS[keyof typeof PERMISSIONS.REPORTS]
+  | typeof PERMISSIONS.AUTOMATION[keyof typeof PERMISSIONS.AUTOMATION]
